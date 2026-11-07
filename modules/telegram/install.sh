@@ -42,9 +42,18 @@ set_owner() {
 polled_elsewhere() {
   dry && return 1
   local token=$(sed -n 's/^TELEGRAM_BOT_TOKEN=//p' $state/.env | tr -d "\"'")
-  curl -s --max-time 15 "https://api.telegram.org/bot$token/getUpdates?timeout=0&limit=1" | grep -q '"error_code":409'
+  # The URL goes in on stdin, so the token never shows up in the process list.
+  print -r -- "url = \"https://api.telegram.org/bot$token/getUpdates?timeout=0&limit=1\"" |
+    curl -s --max-time 15 -K - | grep -q '"error_code":409'
 }
-bot_running() { pgrep -f 'bun server.ts' >/dev/null }
+# The bot's poller (bun server.ts) under this module's agent; firstmate's own bot doesn't count.
+bot_running() {
+  local pid=$(launchctl print gui/$uid/$(label telegram) 2>/dev/null | sed -n 's/^[[:space:]]*pid = //p' | head -1)
+  [[ -n $pid ]] || return 1
+  ps -axo pid=,ppid=,command= | awk -v root=$pid '
+    { parent[$1] = $2; if ($0 ~ /bun server\.ts/) bots[$1] = 1 }
+    END { for (p in bots) for (q = p; q > 1; q = parent[q]) if (q == root) exit 0; exit 1 }'
+}
 # Claude Code only delivers inbound messages from plugins on its channels allowlist, which names the
 # claude-plugins-official marketplace. The same plugin installed from another marketplace (some
 # accounts only have "anthropic-plugin-directory") starts and polls Telegram, but every message is
@@ -54,9 +63,12 @@ plugin_problem() {
   [[ -d $cache/claude-plugins-official/telegram ]] && return 0
   other=(${cache}/*/telegram(N/:h:t))
   if (( $#other )); then
+    # Remove the other copy too: installing it enabled it in settings.json, so every normal session
+    # would start a second poller that steals the bot's messages.
     print -r -- "the plugin is installed from '${other[1]}', whose messages Claude drops (not on the channels allowlist). Fix:"
+    print -r -- "  claude plugin uninstall telegram@${other[1]}"
     print -r -- "  claude plugin marketplace add anthropics/claude-plugins-official"
-    print -r -- "  claude plugin install telegram@claude-plugins-official --replace"
+    print -r -- "  claude plugin install telegram@claude-plugins-official"
   else
     print -r -- "the plugin: claude plugin install telegram@claude-plugins-official (settings.json keeps it off for normal sessions)"
   fi
