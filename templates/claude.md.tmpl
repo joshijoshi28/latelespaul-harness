@@ -1,0 +1,22 @@
+<!-- Written by agent-harness install.sh from templates/claude.md.tmpl; edits here are overwritten.
+     Change the template, your ABOUT.md or your memory instead. -->
+# Global instructions (Claude Code)
+
+The model-agnostic rules live in AGENTS.md (framework); who I am lives in ABOUT.md (my profile). This file only adds Claude-specific notes.
+
+@__HARNESS_DIR__/AGENTS.md
+@__PROFILE_DIR__/ABOUT.md
+@__PROFILE_DIR__/memory/MEMORY.md
+
+## Paths
+- Harness (framework, shareable): `__HARNESS_DIR__`. Per-user values: `__HARNESS_DIR__/harness.env`.
+- Profile (private, synced to GitHub): `__PROFILE_DIR__`: `ABOUT.md`, `memory/`, `knowledge/`, `secrets.md`, `skills/`.
+- Projects: `__PROJECTS_DIR__`.
+
+## Claude Code specifics
+- Claude Code's auto-memory for my main working folders is linked to `__PROFILE_DIR__/memory`, so memories written there land in the profile and sync to GitHub.
+- Framework skills, commands and subagents are in `__HARNESS_DIR__/{skills,commands,agents}`; my own go in the same folders inside the profile (a profile skill with the same name wins). Run `__HARNESS_DIR__/install.sh` after adding one so it gets linked into `~/.claude`.
+- Settings I want on every machine go in `__PROFILE_DIR__/settings.json`; install.sh merges it into `~/.claude/settings.json`.
+
+## Modules
+__MODULE_NOTES__

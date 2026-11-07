@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.__LABEL_PREFIX__.harness-sync</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/zsh</string>
+    <string>__HARNESS_DIR__/scripts/sync.sh</string>
+  </array>
+  <key>RunAtLoad</key><true/>
+  <key>StartInterval</key><integer>__SYNC_INTERVAL__</integer>
+  <key>StandardOutPath</key><string>__HARNESS_DIR__/logs/sync.log</string>
+  <key>StandardErrorPath</key><string>__HARNESS_DIR__/logs/sync.log</string>
+</dict>
+</plist>

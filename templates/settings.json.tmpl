@@ -1,0 +1,34 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'__HARNESS_DIR__/scripts/sync.sh' --pull >/dev/null 2>&1 || true",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'__HARNESS_DIR__/scripts/session-learn.sh'",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
+  "env": {
+    "LAVISH_AXI_TELEMETRY": "0"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(lavish-axi:*)"
+    ]
+  }
+}

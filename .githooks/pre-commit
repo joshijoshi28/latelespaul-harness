@@ -1,0 +1,18 @@
+#!/bin/zsh
+# Blocks commits that look like they contain a secret value.
+patterns=(
+  '[0-9]{8,10}:[A-Za-z0-9_-]{35}'           # Telegram bot token
+  'gh[pousr]_[A-Za-z0-9]{36}'               # GitHub token
+  'github_pat_[A-Za-z0-9_]{50,}'            # GitHub fine-grained token
+  'sk-ant-[A-Za-z0-9_-]{20,}'               # Anthropic API key
+  'sk-[A-Za-z0-9]{32,}'                     # OpenAI-style key
+  'AKIA[0-9A-Z]{16}'                        # AWS access key
+  'xox[baprs]-[A-Za-z0-9-]{10,}'            # Slack token
+  '-----BEGIN [A-Z ]*PRIVATE KEY-----'      # Private key
+)
+regex="${(j:|:)patterns}"
+if git diff --cached -U0 --no-color | grep '^+' | grep -Eq -- "$regex"; then
+  echo "pre-commit: blocked, staged changes look like they contain a secret." >&2
+  git diff --cached -U0 --no-color | grep '^+' | grep -En -- "$regex" | cut -c1-80 >&2
+  exit 1
+fi

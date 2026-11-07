@@ -1,0 +1,21 @@
+# Per-user values: never commit
+harness.env
+
+# Secrets: never commit these
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+*credentials*
+*token*
+*.secret
+
+# Local / generated
+.DS_Store
+logs/
+*.log
+__pycache__/
