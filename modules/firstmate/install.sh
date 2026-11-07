@@ -5,6 +5,8 @@
 #   install.sh --start   also start the tmux session if it is not running
 #   install.sh --status  is the session up? (exit 1 if not)
 set -e
+# --dry-run anywhere: print actions only (same as HARNESS_DRY_RUN=1).
+(( ${argv[(Ie)--dry-run]} )) && { export HARNESS_DRY_RUN=1; argv=(${argv:#--dry-run}) }
 source ${0:A:h:h:h}/lib/common.sh
 mod=$HARNESS_DIR/modules/firstmate
 mode=${1:-install}

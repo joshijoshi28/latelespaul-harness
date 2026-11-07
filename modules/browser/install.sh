@@ -6,6 +6,8 @@
 #   install.sh [--id <id>] --uninstall stop one (default: claude); keeps the profile and its logins
 #   install.sh [--id <id>] --status    is it up? (exit 1 if not)
 set -e
+# --dry-run anywhere: print actions only (same as HARNESS_DRY_RUN=1).
+(( ${argv[(Ie)--dry-run]} )) && { export HARNESS_DRY_RUN=1; argv=(${argv:#--dry-run}) }
 source ${0:A:h:h:h}/lib/common.sh
 mod=$HARNESS_DIR/modules/browser
 uid=$(id -u)

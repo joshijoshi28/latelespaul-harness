@@ -6,6 +6,8 @@
 #   install.sh --uninstall  stop and remove it from this Mac
 #   install.sh --status     show who owns the bot and how it is doing (exit 1 if not running here)
 set -e
+# --dry-run anywhere: print actions only (same as HARNESS_DRY_RUN=1).
+(( ${argv[(Ie)--dry-run]} )) && { export HARNESS_DRY_RUN=1; argv=(${argv:#--dry-run}) }
 source ${0:A:h:h:h}/lib/common.sh
 mod=$HARNESS_DIR/modules/telegram
 data=$PROFILE_DIR/telegram               # synced: ACTIVE_HOST, morning-brief.md, watchlist.txt
@@ -54,7 +56,9 @@ case $mode in
   done
   bot_running && print "bot process: running" || print "bot process: not running"
   tail -5 $state/logs/watchdog.log 2>/dev/null || true
-  [[ $(owner) == $host ]] && bot_running && exit 0
+  # Healthy = this Mac owns the bot and it runs, or another Mac owns it and nothing runs here.
+  if [[ $(owner) == $host ]]; then bot_running && exit 0
+  elif [[ -n $(owner) ]] && ! launchd_loaded $(label telegram); then exit 0; fi
   exit 1 ;;
 --uninstall)
   stop_agents
@@ -66,6 +70,13 @@ install|--take-over) ;;
 *) print "usage: $0 [--take-over|--uninstall|--status]"; exit 1 ;;
 esac
 
+[[ -d $PROFILE_DIR/.git ]] && git -C $PROFILE_DIR fetch -q 2>/dev/null || true
+current=$(owner)
+if [[ -n $current && $current != $host && $mode != --take-over ]]; then
+  print "The bot runs on $current, so nothing to do here. To move it to this Mac: $0 --take-over"
+  exit 0
+fi
+
 # Prerequisites. Secrets and pairing stay on each Mac; nothing secret is in git.
 command -v claude >/dev/null || need "Claude Code (see SETUP.md step 1)"
 command -v bun >/dev/null || need "Bun: brew install oven-sh/bun/bun"
@@ -73,13 +84,6 @@ command -v screen >/dev/null || need "screen (ships with macOS)"
 [[ -d ~/.claude/plugins/cache/claude-plugins-official/telegram ]] || need \
   "the plugin: claude plugin install telegram@claude-plugins-official (settings.json keeps it off for normal sessions)"
 [[ -s $state/.env ]] || need "the bot token in $state/.env (TELEGRAM_BOT_TOKEN=..., chmod 600); see modules/telegram/SETUP.md"
-
-[[ -d $PROFILE_DIR/.git ]] && git -C $PROFILE_DIR fetch -q 2>/dev/null || true
-current=$(owner)
-if [[ -n $current && $current != $host && $mode != --take-over ]]; then
-  print "The bot runs on $current. To move it here, run: $0 --take-over"
-  exit 1
-fi
 
 # Render the plists first: if they match what is installed and the bot is healthy, leave it alone
 # (install.sh re-runs often, and a restart interrupts the conversation).
