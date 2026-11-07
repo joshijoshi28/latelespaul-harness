@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.__LABEL_PREFIX__.morning-brief</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/python3</string><string>-I</string>
+    <string>__HARNESS_DIR__/modules/telegram/morning-brief.py</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <dict><key>Hour</key><integer>__BRIEF_HOUR__</integer><key>Minute</key><integer>__BRIEF_MINUTE__</integer></dict>
+  <key>StandardOutPath</key><string>__HOME__/.claude/channels/telegram/logs/morning-brief.out</string>
+  <key>StandardErrorPath</key><string>__HOME__/.claude/channels/telegram/logs/morning-brief.out</string>
+</dict>
+</plist>

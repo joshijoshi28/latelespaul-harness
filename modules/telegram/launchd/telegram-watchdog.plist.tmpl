@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.__LABEL_PREFIX__.telegram-watchdog</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/python3</string><string>-I</string>
+    <string>__HARNESS_DIR__/modules/telegram/watchdog.py</string>
+  </array>
+  <key>RunAtLoad</key><true/>
+  <key>StartInterval</key><integer>60</integer>
+  <key>StandardOutPath</key><string>__HOME__/.claude/channels/telegram/logs/watchdog.out</string>
+  <key>StandardErrorPath</key><string>__HOME__/.claude/channels/telegram/logs/watchdog.out</string>
+</dict>
+</plist>

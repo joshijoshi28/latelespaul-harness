@@ -1,0 +1,25 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'__HARNESS_DIR__/modules/browser/browser-guard.py'",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  },
+  "env": {
+    "CHROME_DEVTOOLS_AXI_BROWSER_URL": "http://127.0.0.1:__BROWSER_PORT__",
+    "CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS": "1"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(chrome-devtools-axi:*)"
+    ]
+  }
+}

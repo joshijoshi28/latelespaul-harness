@@ -1,0 +1,53 @@
+---
+name: firstmate
+description: Delegate coding and other delegable work to firstmate, the user's crew-running agent at __FIRSTMATE_DIR__. Use whenever the user asks to implement, fix, refactor, build, test, review, investigate or audit code in any project (except the harness, the profile and firstmate itself), when they say "give it to firstmate", "/firstmate", "delegate", or ask what firstmate or its crew is doing.
+---
+
+<!-- Written by agent-harness (firstmate module) from modules/firstmate/skill/SKILL.md.tmpl. -->
+
+# Firstmate delegation
+
+Firstmate (`__FIRSTMATE_DIR__`, tmux session `__FIRSTMATE_SESSION__`) runs a crew of agents:
+each task gets its own git worktree and ends as a PR, a local merge, or a report.
+Code work goes there by default; this session stays the liaison.
+
+```
+me (this session) --fm-inbox note--> firstmate --spawns--> crewmate (worktree) --> PR / report
+        ^                                 |
+        +-------- fm-inbox status --------+
+```
+
+## What to delegate
+- Delegate: any implementation, bug fix, refactor, feature, tests, code review, investigation or audit in a project repo, and any multi-step job that can run unattended.
+- Keep here: questions and explanations, quick lookups, edits to the harness (`__HARNESS_DIR__`), the profile (`__PROFILE_DIR__`) and firstmate itself (`__FIRSTMATE_DIR__`), personal tasks (mail, calendar, notes, browser), and anything the user says to do here.
+- When unsure, delegate and say so in one line.
+
+## How to delegate
+1. Check firstmate is up: `tmux has-session -t __FIRSTMATE_SESSION__`. If not, start it:
+   `__HARNESS_DIR__/modules/firstmate/install.sh --start`
+   and tell the user (it may need a trust or approval answer in firstmate's own session).
+2. Write a self-contained brief. Firstmate has none of this conversation, so include:
+   - the project (repo path or GitHub URL; new repos get registered by firstmate),
+   - the goal and acceptance criteria,
+   - constraints, relevant files, links, what was already tried,
+   - the ship mode if the user stated one (PR, local-only, no-mistakes), else leave it to firstmate's project defaults,
+   - "requested via harness session" so the origin is clear.
+3. Send it as a note (idempotent with a request id; body on stdin avoids quoting issues):
+   ```sh
+   __FIRSTMATE_DIR__/bin/fm-inbox.sh note --request-id "harness-$(date +%Y%m%d-%H%M%S)" - <<'BRIEF'
+   <brief>
+   BRIEF
+   ```
+   Exit 0 = saved and firstmate woken. Exit 3 = saved but not announced: run
+   `fm-inbox.sh announce <id>`. Exit 1 = nothing saved; report it.
+4. Tell the user in one or two lines: what was sent and the request id. Don't do the work here too.
+
+## Checking progress
+- `__FIRSTMATE_DIR__/bin/fm-inbox.sh status`: read-only snapshot (inbox, in-flight tasks, workers). Never wakes firstmate; safe anytime.
+- `__FIRSTMATE_DIR__/bin/fm-inbox.sh receipts`: whether a note was picked up and any reply.
+- Backlog: `__FIRSTMATE_DIR__/data/backlog.md`.
+
+## Rules
+- Approvals and captain decisions belong to the user, in firstmate's own session (Claude Remote Control, or firstmate's own Telegram bot if they set one up). Never type answers into firstmate's tmux pane.
+- Don't edit firstmate's `state/` or `data/` by hand; use its scripts.
+- Pass along firstmate's results honestly: PR links, holds waiting on the user, failures.

@@ -1,0 +1,6 @@
+#!/bin/zsh
+# Written by agent-harness (browser module): chrome-devtools-axi pointed at chrome-__CHROME_ID__
+# (~/.chrome-__CHROME_ID__, port __CHROME_PORT__). Example: chrome-__CHROME_ID__ open https://example.com/
+export CHROME_DEVTOOLS_AXI_SESSION=__CHROME_ID__
+export CHROME_DEVTOOLS_AXI_BROWSER_URL=http://127.0.0.1:__CHROME_PORT__
+exec chrome-devtools-axi "$@"
