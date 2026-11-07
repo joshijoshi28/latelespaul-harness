@@ -45,6 +45,34 @@ polled_elsewhere() {
   curl -s --max-time 15 "https://api.telegram.org/bot$token/getUpdates?timeout=0&limit=1" | grep -q '"error_code":409'
 }
 bot_running() { pgrep -f 'bun server.ts' >/dev/null }
+# Claude Code only delivers inbound messages from plugins on its channels allowlist, which names the
+# claude-plugins-official marketplace. The same plugin installed from another marketplace (some
+# accounts only have "anthropic-plugin-directory") starts and polls Telegram, but every message is
+# dropped. Prints the problem, if any.
+plugin_problem() {
+  local cache=~/.claude/plugins/cache other
+  [[ -d $cache/claude-plugins-official/telegram ]] && return 0
+  other=(${cache}/*/telegram(N/:h:t))
+  if (( $#other )); then
+    print -r -- "the plugin is installed from '${other[1]}', whose messages Claude drops (not on the channels allowlist). Fix:"
+    print -r -- "  claude plugin marketplace add anthropics/claude-plugins-official"
+    print -r -- "  claude plugin install telegram@claude-plugins-official --replace"
+  else
+    print -r -- "the plugin: claude plugin install telegram@claude-plugins-official (settings.json keeps it off for normal sessions)"
+  fi
+}
+# Checks the token's shape without printing it. A space or quote around it (easy to leave behind in
+# an editor) makes every Telegram call fail.
+token_problem() {
+  [[ -s $state/.env ]] || { print -r -- "the bot token in $state/.env (TELEGRAM_BOT_TOKEN=..., chmod 600); see modules/telegram/SETUP.md"; return }
+  grep -Eq '^TELEGRAM_BOT_TOKEN=[0-9]+:[A-Za-z0-9_-]+$' $state/.env ||
+    print -r -- "$state/.env has no clean TELEGRAM_BOT_TOKEN=<digits>:<letters> line (check for spaces, quotes or blank lines around the token)"
+}
+# Messages Claude dropped, per the plugin's MCP log for the bot's working folder.
+dropped_messages() {
+  local logs=(~/Library/Caches/claude-cli-nodejs/${TELEGRAM_WORKDIR//[^A-Za-z0-9]/-}/mcp-logs-plugin-telegram-*/*.jsonl(N.om))
+  (( $#logs )) && grep -q 'Channel notifications skipped' $logs[1]
+}
 # need <message>: a prerequisite is missing; stop (a dry run only reports it).
 need() { print -r -- "missing: $1"; dry || exit 1 }
 
@@ -55,9 +83,11 @@ case $mode in
     printf '%-40s %s\n' $(label $n) "$(launchctl print gui/$uid/$(label $n) 2>/dev/null | sed -n 's/^\tstate = //p' | head -1 || true)"
   done
   bot_running && print "bot process: running" || print "bot process: not running"
+  problem=$(plugin_problem; token_problem); [[ -n $problem ]] && print -r -- "problem: $problem"
+  dropped_messages && print "problem: the running session drops incoming messages (plugin not on the channels allowlist); fix the plugin, then restart the bot"
   tail -5 $state/logs/watchdog.log 2>/dev/null || true
   # Healthy = this Mac owns the bot and it runs, or another Mac owns it and nothing runs here.
-  if [[ $(owner) == $host ]]; then bot_running && exit 0
+  if [[ $(owner) == $host ]]; then bot_running && [[ -z $problem ]] && ! dropped_messages && exit 0
   elif [[ -n $(owner) ]] && ! launchd_loaded $(label telegram); then exit 0; fi
   exit 1 ;;
 --uninstall)
@@ -81,9 +111,8 @@ fi
 command -v claude >/dev/null || need "Claude Code (see SETUP.md step 1)"
 command -v bun >/dev/null || need "Bun: brew install oven-sh/bun/bun"
 command -v screen >/dev/null || need "screen (ships with macOS)"
-[[ -d ~/.claude/plugins/cache/claude-plugins-official/telegram ]] || need \
-  "the plugin: claude plugin install telegram@claude-plugins-official (settings.json keeps it off for normal sessions)"
-[[ -s $state/.env ]] || need "the bot token in $state/.env (TELEGRAM_BOT_TOKEN=..., chmod 600); see modules/telegram/SETUP.md"
+problem=$(plugin_problem); [[ -z $problem ]] || need "$problem"
+problem=$(token_problem); [[ -z $problem ]] || need "$problem"
 
 # Render the plists first: if they match what is installed and the bot is healthy, leave it alone
 # (install.sh re-runs often, and a restart interrupts the conversation).
@@ -95,7 +124,7 @@ for n in $names; do
   [[ -f $agents_dir/$(label $n).plist && "$(<$agents_dir/$(label $n).plist)" == "${rendered[$n]}" ]] || same=0
   launchd_loaded $(label $n) || same=0
 done
-if [[ $mode == install && $current == $host && $same == 1 ]] && bot_running; then
+if [[ $mode == install && $current == $host && $same == 1 ]] && bot_running && ! dropped_messages; then
   print "Telegram bot already running on $host; left it alone."
   exit 0
 fi

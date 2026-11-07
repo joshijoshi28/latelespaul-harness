@@ -143,9 +143,25 @@ def agent_pid():
 
 
 def is_ours(cmd):
-    return ("/telegram/run.sh" in cmd
-            or "telegram-settings.json" in cmd
-            or "plugins/cache/claude-plugins-official/telegram" in cmd)
+    """A bot-session process: run.sh, a claude started with the bot settings, or the plugin's server.
+
+    Matches on the program actually running, not on text anywhere in the command line: a shell
+    or editor whose arguments merely mention these paths (an agent inspecting the setup) is not
+    the bot and must not be killed.
+    """
+    words = cmd.split()
+    if not words:
+        return False
+    prog = os.path.basename(words[0])
+    if words[0].endswith("/telegram/run.sh"):
+        return True
+    # "/bin/zsh -il .../telegram/run.sh" (its shebang); "zsh -c '...run.sh...'" is someone's command.
+    if (prog in ("zsh", "bash", "sh", "screen", "SCREEN", "login") and "-c" not in words
+            and any(w.endswith("/telegram/run.sh") for w in words[1:])):
+        return True
+    if prog in ("claude", "node") and "telegram-settings.json" in cmd:
+        return True
+    return prog == "bun" and "plugins/cache/claude-plugins-official/telegram" in cmd
 
 
 def kill_strays(procs, tree):
